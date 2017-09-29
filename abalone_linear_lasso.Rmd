@@ -1,0 +1,131 @@
+---
+title: "Used LASSO"
+output: html_notebook
+---
+
+```{r}
+rm(list = ls(all=TRUE))
+setwd("C:/Users/RaghuTeja/Desktop/intern/")
+mydata <- read.table("abalone.txt", header=FALSE, sep=",")
+mydata$V9<-mydata$V9+1.5
+```
+
+```{r}
+str(mydata)
+dummy1<-dummy(mydata$V1)
+mydata$V1<-NULL
+dummy1<-as.data.frame(dummy1)
+mydata<-cbind(dummy1,mydata)
+target<-mydata$V9
+mydata$V9<-NULL
+mydata<-cbind(mydata,target)
+plot(mydata$target,mydata$V6)
+plot(mydata$target,mydata$V7)
+boxplot(mydata$V6)
+boxplot(mydata)
+
+```
+
+```{r}
+library(doParallel)
+registerDoParallel(10)
+x=model.matrix(target~., mydata)
+fit.lasso<-cv.glmnet(x,mydata$target,type.measure="mse",alpha=1,family="gaussian",nfolds=10,parallel=T)
+
+
+c=coef(fit.lasso,s=fit.lasso$lambda.1se)
+  inds<-which(c!=0)
+  imp_att<-row.names(c)[inds]
+  imp_att<-imp_att[-c(grep("Intercept",imp_att))]
+  imp_att
+
+```
+
+```{r}
+mydata$V1F<-NULL
+mydata$V1M<-NULL
+mydata$V2<-NULL
+mydata$V7<-NULL
+mydata$target<-NULL
+```
+
+```{r}
+class(mydata)
+View(mydata)
+```
+
+```{r}
+mydata<-scale(mydata[,1:6], center = TRUE, scale = TRUE)
+class(mydata)
+mydata<-as.data.frame(mydata)
+class(mydata)
+
+```
+
+```{r}
+mydata<-cbind(mydata,target)
+```
+
+```{r}
+str(mydata)
+```
+
+```{r}
+set.seed(100)
+
+# the "sample()" function helps us to randomly sample 70% of the row indices of the dataset
+
+train_rows <- sample(x = 1:nrow(mydata), size = 0.7*nrow(mydata))
+
+# We use the above indices to subset the train and test sets from the data
+
+train_data <- mydata[train_rows, ]
+
+test_data <- mydata[-train_rows, ]
+
+```
+
+```{r}
+model1 <- lm(formula = target ~., data = train_data)
+summary(model1)
+```
+
+```{r}
+mae <- function(actual, predicted){
+  
+  error <- actual - predicted
+  
+  mean(abs(error))
+  
+}
+
+mse <- function(actual, predicted){
+  
+  error <- actual - predicted
+  
+  mean(error^2)
+  
+}
+rmse <- function(actual, predicted){
+  
+  error <- actual - predicted
+  
+  sqrt(mean(error^2))
+  
+}
+
+```
+
+```{r}
+preds <- predict(model1, test_data[, !(names(test_data) %in% c("target"))])
+```
+
+```{r}
+mae(test_data[, "target"], preds)
+
+mse(test_data[, "target"], preds)
+
+rmse(test_data[, "target"], preds)
+
+```
+
