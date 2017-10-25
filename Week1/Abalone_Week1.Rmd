@@ -1,0 +1,98 @@
+---
+title: "Abalone_Week1"
+author: "Raghu"
+date: "September 7, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+To clean the Environment
+```{r}
+rm(list = ls(all=TRUE))
+```
+TO make sure that the files we read exist in the workig directory or not
+```{r}
+setwd("C:/Users/RaghuTeja/Desktop/intern/b29-interns-data-RaghutejaDhulipala-master/submissions/Week1")
+```
+TO read the data 
+```{r}
+mydata <- read.table("abalone.txt", header=FALSE, sep=",")
+```
+TO know the first 6 rows of the dataset
+```{r}
+head(mydata)
+```
+To know the Last 6 rows in the data
+```{r}
+tail(mydata)
+```
+To know the structure of the data.
+```{r}
+str(mydata)
+```
+To check for any NA values in the entire dataset
+```{r}
+sum(is.na(mydata))
+```
+To find the detailed information of each any every attribute.
+```{r}
+summary(mydata)
+```
+TO check the Standard Deviation in each attribute
+```{r}
+sd(mydata$V2)
+sd(mydata$V3)
+sd(mydata$V4)
+sd(mydata$V5)
+sd(mydata$V6)
+sd(mydata$V7)
+sd(mydata$V8)
+sd(mydata$V9)
+
+```
+To know the no: of unique values in each attribute
+```{r}
+unique(mydata$V1)
+unique(mydata$v2)
+unique(mydata$V3)
+unique(mydata$V4)
+unique(mydata$V5)
+unique(mydata$V6)
+unique(mydata$V7)
+unique(mydata$V8)
+unique(mydata$V9)
+```
+
+
+```{r}
+target<-mydata$V1
+mydata$V1<-NULL
+```
+
+To get the correlation matrix for the numerical attributes
+```{r}
+res <- cor(mydata)
+round(res, 2)
+```
+TO see the correlation between the attributes graphically
+```{r}
+
+library(corrplot)
+
+corrplot(cor(mydata), method = "number")
+```
+
+```{r}
+mat <- cor(mydata)
+round(mat, 2)
+```
+
+mydata$V3=NULL
+mydata$V6=NULL
+mydata$V7=NULL
+
+```{r}
+mydata = cbind(mydata,target)
+```
