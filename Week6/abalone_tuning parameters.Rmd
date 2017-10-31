@@ -1,0 +1,322 @@
+---
+title: "Untitled"
+author: "Raghu"
+date: "October 26, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+To clean the Environment
+```{r}
+rm(list = ls(all=TRUE))
+```
+
+TO make sure that the files we read exist in the workig directory or not
+```{r}
+setwd("C:/Users/RaghuTeja/Desktop/intern/")
+```
+TO read the data 
+```{r}
+mydata <- read.table("abalone.txt", header=FALSE, sep=",")
+#mydata<-mydata[-2052,]
+```
+TO know the first 6 rows of the dataset
+```{r}
+head(mydata)
+```
+To know the Last 6 rows in the data
+```{r}
+tail(mydata)
+```
+To know the structure of the data.
+```{r}
+str(mydata)
+```
+To check for any NA values in the entire dataset
+```{r}
+sum(is.na(mydata))
+```
+To find the detailed information of each any every attribute.
+```{r}
+summary(mydata)
+```
+To find the number of rows with each class
+```{r}
+table(mydata$V1)
+```
+
+Adding 1.5 to the entire coloumn(V9) as mentioned in description, for age of the abalone
+```{r}
+mydata$V9<-mydata$V9+1.5
+```
+Using library dummies as we have one attribute with 3 classes.
+```{r}
+#install.packages("dummies")
+library(dummies)
+
+```
+Dummying the cloumn V1
+```{r}
+dummy1<-dummy(mydata$V1)
+```
+Dropping the column V1 as we have already dummied the column
+```{r}
+mydata$V1<-NULL
+```
+to check the class of the dummied variable
+```{r}
+class(dummy1)
+```
+As the class of the dummy is in matrix we change to dataframe
+```{r}
+dummy1<-as.data.frame(dummy1)
+```
+Adding the dummy columns to mydata
+```{r}
+mydata<-cbind(dummy1,mydata)
+```
+
+Target V9 is stored in the target variable for standardizing the entire data
+```{r}
+target<-mydata$V9
+mydata$V9<-NULL
+```
+Standardizing the data using scale function
+```{r}
+dim(mydata)
+mydata<-scale(mydata[,1:10], center = TRUE, scale = TRUE)
+class(mydata)#mydata is in matrix format
+mydata<-as.data.frame(mydata)#so changing it into dataframe
+mydata<-cbind(mydata,target)#adding the target back to the data
+str(mydata)
+```
+Diving the data into test and train so as to run the model and predict the best model
+```{r}
+set.seed(100)
+
+# the "sample()" function helps us to randomly sample 70% of the row indices of the dataset
+
+train_rows <- sample(x = 1:nrow(mydata), size = 0.7*nrow(mydata))
+
+# We use the above indices to subset the train and test sets from the data
+
+train_data <- mydata[train_rows, ]
+
+test_data <- mydata[-train_rows, ]
+
+```
+
+```{r}
+mae <- function(actual, predicted){
+  
+  error <- actual - predicted
+  
+  mean(abs(error))
+  
+}
+
+mse <- function(actual, predicted){
+  
+  error <- actual - predicted
+  
+  mean(error^2)
+  
+}
+rmse <- function(actual, predicted){
+  
+  error <- actual - predicted
+  
+  sqrt(mean(error^2))
+  
+}
+
+mape <- function(actual, predicted){
+  
+  error <- actual - predicted
+  
+  mean(abs(error/actual))*100
+  
+}
+
+
+```
+
+CART
+```{r}
+library(rpart)
+
+model_dt <- rpart(target ~ . , train_data,cp=0.001)
+printcp(model_dt)
+plotcp(model_dt)
+#On test data
+pred_dt <- predict(model_dt, train_data[, !(names(train_data) %in% c("target"))])
+
+mae(train_data[, "target"], pred_dt)
+
+mse(train_data[, "target"], pred_dt)
+
+rmse(train_data[, "target"], pred_dt)
+
+#On test data
+pred_dt <- predict(model_dt, test_data[, !(names(test_data) %in% c("target"))])
+
+mae(test_data[, "target"], pred_dt)
+
+mse(test_data[, "target"], pred_dt)
+
+rmse(test_data[, "target"], pred_dt)
+
+regr.eval(test_data$Target, pred_dt)
+
+
+```
+
+#Random forest
+
+```{r}
+library(DMwR)
+library(randomForest)
+rf <- randomForest(target ~ ., data=train_data,ntrees=1000,mtry=3)
+importance(rf)
+#On train data
+preds_rf_imp <- predict(rf, train_data[, !(names(train_data) %in% c("Target"))])
+  
+mae(train_data[, "target"], preds_rf_imp)
+
+mse(train_data[, "target"], preds_rf_imp)
+
+rmse(train_data[, "target"], preds_rf_imp)
+
+#On test data
+preds_rf_imp <- predict(rf, test_data[, !(names(test_data) %in% c("Target"))])
+  
+mae(test_data[, "target"], preds_rf_imp)
+
+mse(test_data[, "target"], preds_rf_imp)
+
+rmse(test_data[, "target"], preds_rf_imp)
+
+regr.eval(test_data$target, preds_rf_imp)
+
+```
+```{r}
+rf <- randomForest(target ~ ., data=train_data,ntrees=1500,mtry=3)
+importance(rf)
+#On train data
+preds_rf_imp <- predict(rf, train_data[, !(names(train_data) %in% c("Target"))])
+  
+mae(train_data[, "target"], preds_rf_imp)
+
+mse(train_data[, "target"], preds_rf_imp)
+
+rmse(train_data[, "target"], preds_rf_imp)
+
+#On test data
+preds_rf_imp <- predict(rf, test_data[, !(names(test_data) %in% c("Target"))])
+  
+mae(test_data[, "target"], preds_rf_imp)
+
+mse(test_data[, "target"], preds_rf_imp)
+
+rmse(test_data[, "target"], preds_rf_imp)
+
+regr.eval(test_data$target, preds_rf_imp)
+```
+
+#KNN
+```{r}
+library(class)
+library(DMwR)
+library(caret)
+model_knn <- knn3(target~.,train_data,k=3)
+pred_knn <- predict(model_knn, train_data[, !(names(train_data) %in% c("target"))])
+mae(train_data[, "target"], pred_knn)
+
+mse(train_data[, "target"], pred_knn)
+
+rmse(train_data[, "target"], pred_knn)
+
+#On test data
+pred_knn <- predict(model_knn, test_data[, !(names(test_data) %in% c("Target"))])
+  
+mae(test_data[, "target"], pred_knn)
+
+mse(test_data[, "target"], pred_knn)
+
+rmse(test_data[, "target"], pred_knn)
+
+regr.eval(test_data$target, pred_knn)
+
+```
+
+```{r}
+model_knn <- knn3(target~.,train_data,k=5)
+pred_knn <- predict(model_knn, train_data[, !(names(train_data) %in% c("target"))])
+mae(train_data[, "target"], pred_knn)
+
+mse(train_data[, "target"], pred_knn)
+
+rmse(train_data[, "target"], pred_knn)
+
+#On test data
+pred_knn <- predict(model_knn, test_data[, !(names(test_data) %in% c("Target"))])
+  
+mae(test_data[, "target"], pred_knn)
+
+mse(test_data[, "target"], pred_knn)
+
+rmse(test_data[, "target"], pred_knn)
+
+regr.eval(test_data$target, pred_knn)
+
+```
+
+#SVM
+```{r}
+library(e1071)
+library(caret)
+model_svm <- svm(target ~ ., data = train_data, kernal = "linear", cost=1)
+summary(model_svm)
+#On train data
+preds_svm <- predict(model_svm, train_data[, !(names(train_data) %in% c("target"))])
+
+mae(train_data[, "target"], preds_svm)
+
+mse(train_data[, "target"], preds_svm)
+
+rmse(train_data[, "target"], preds_svm)
+#On test data
+preds_svm <- predict(model_svm, test_data[, !(names(test_data) %in% c("target"))])
+mae(test_data[, "target"], preds_svm)
+
+mse(test_data[, "target"], preds_svm)
+
+rmse(test_data[, "target"], preds_svm)
+
+regr.eval(test_data$Target, preds_svm)
+```
+
+```{r}
+model_svm <- svm(target ~ ., data = train_data, kernal = "linear", cost=2)
+summary(model_svm)
+#On train data
+preds_svm <- predict(model_svm, train_data[, !(names(train_data) %in% c("target"))])
+
+mae(train_data[, "target"], preds_svm)
+
+mse(train_data[, "target"], preds_svm)
+
+rmse(train_data[, "target"], preds_svm)
+#On test data
+preds_svm <- predict(model_svm, test_data[, !(names(test_data) %in% c("target"))])
+mae(test_data[, "target"], preds_svm)
+
+mse(test_data[, "target"], preds_svm)
+
+rmse(test_data[, "target"], preds_svm)
+
+
+```
